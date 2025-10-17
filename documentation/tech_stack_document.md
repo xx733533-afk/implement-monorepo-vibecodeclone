@@ -1,90 +1,95 @@
-# Tech Stack Document
+# Tech Stack Document: implement-monorepo-vibecodeclone
 
-This document explains the key technologies chosen for the **codeguide-starter** project. It’s written in everyday language so anyone—technical or not—can understand why each tool was picked and how it supports the application.
+This document explains, in everyday language, the technology choices for the `implement-monorepo-vibecodeclone` project. It’s designed to be clear and approachable for non-technical readers, showing why each tool was chosen and how it fits into the overall system.
 
 ## 1. Frontend Technologies
-The frontend is everything the user sees and interacts with. For this project, we’ve used:
+
+We built the user-facing part of the application (what you see and click) using modern, widely adopted tools:
 
 - **Next.js (App Router)**
-  - A React framework that makes page routing, server-side rendering, and API routes very simple.
-  - Enhances user experience by pre-rendering pages on the server or at build time, leading to faster initial load.
-- **React 18**
-  - The underlying library for building user interfaces with reusable components.
-  - Provides a smooth, interactive experience thanks to its virtual DOM and modern hooks.
-- **TypeScript**
-  - A superset of JavaScript that adds types (labels for data).
-  - Helps catch errors early during development and makes the code easier to maintain.
-- **CSS (globals.css & theme.css)**
-  - **globals.css** applies base styles (fonts, colors, resets) across the entire app.
-  - **dashboard/theme.css** defines the look and feel specific to the dashboard area.
-  - This separation keeps styles organized and avoids accidental style conflicts.
+  - Provides file-based routing and built-in server components, making pages fast and easy to organize.
+- **React & TypeScript**
+  - React handles interactive UI components, and TypeScript adds type safety, catching mistakes early.
+- **Tailwind CSS**
+  - A utility-first styling framework that lets us build custom designs quickly without writing large CSS files.
+- **shadcn/ui**
+  - A set of pre-built, accessible UI components (buttons, dialogs, form elements) that ensure a consistent look and feel.
+- **next-themes**
+  - Adds light/dark mode switching with minimal configuration, giving users control over their visual experience.
 
-By combining these tools, we have a clear structure (Next.js folders for pages and layouts), safer code (TypeScript), and flexible styling with vanilla CSS.
+These choices work together to deliver an attractive, responsive interface that’s simple to extend as we add features like code editors or terminals.
 
 ## 2. Backend Technologies
-The backend handles data, user accounts, and the logic behind the scenes. Our choices here are:
 
-- **Next.js API Routes**
-  - Allows us to write server-side code (`route.ts` files) alongside our frontend in the same project.
-  - Runs on Node.js, so we can handle requests like sign-up, sign-in, and data fetching in one place.
-- **Node.js Runtime**
-  - The JavaScript environment on the server that executes our API routes.
-- **bcrypt** (npm package)
-  - A library for hashing passwords securely before storing them.
-  - Ensures that even if someone got access to our data, raw passwords aren’t visible.
-- **(Optional) NextAuth.js or JWT**
-  - While this starter kit shows a custom authentication flow, it can easily integrate services like NextAuth.js for email-based login or JWT (JSON Web Tokens) for stateless sessions.
+The backend (the part that handles data, business logic, and integrations) uses well-established server frameworks and databases:
 
-These components work together to receive user credentials, verify or store them securely, manage sessions or tokens, and deliver protected data back to the frontend.
+- **Express.js with TypeScript**
+  - A lightweight web server framework that serves API endpoints and handles requests, with TypeScript ensuring reliable code.
+- **Prisma ORM**
+  - Manages database interactions in a type-safe way. We can define our data models in code and let Prisma handle queries and migrations.
+- **PostgreSQL**
+  - A powerful, open-source relational database for storing user accounts, session data, and logs securely.
+- **Redis**
+  - An in-memory data store used here for rate-limiting API calls, preventing abuse and ensuring fair usage.
+- **RESTful API Endpoints & WebSockets**
+  - Standard HTTP endpoints handle actions like running CLI commands, while WebSockets stream live logs back to the browser.
+
+Together, these components handle user authentication, data storage, command execution requests, and real-time feedback in a reliable and scalable way.
 
 ## 3. Infrastructure and Deployment
-Infrastructure covers where and how we host the app, as well as how changes get delivered:
 
-- **Git & GitHub**
-  - Version control system (Git) and remote hosting (GitHub) keep track of all code changes and allow team collaboration.
-- **Vercel (or Netlify)**
-  - A popular hosting service optimized for Next.js, with one-click deployments and global content delivery.
-  - Automatically rebuilds and deploys the site whenever code is pushed to the main branch.
+To make development and deployment smooth, we rely on containerization, workspace management, and automated pipelines:
+
+- **Docker & Docker Compose**
+  - Containerize each service (web, server, database, Redis) so every environment (developer workstation or production) looks the same.
+- **pnpm Workspace**
+  - Manages multiple applications and shared packages in a single repository, simplifying dependency management.
+- **GitHub (Version Control)**
+  - Hosts the code, tracks changes, and collaborates via pull requests.
 - **GitHub Actions (CI/CD)**
-  - Automates tasks like linting (ESLint), formatting (Prettier), and running any tests you add.
-  - Ensures that only clean, tested code goes live.
+  - Automates linting, type-checking, testing (with Jest and Playwright), and building. It only runs checks on packages changed by a commit, speeding up feedback.
+- **Vercel**
+  - Hosts the frontend with seamless deployments on every push to the main branch, ensuring the live site is always up to date.
 
-Together, these tools provide a reliable, scalable setup where every code change is tested and deployed quickly, with minimal manual work.
+These infrastructure choices give us repeatable builds, clear version history, and automated quality checks.
 
 ## 4. Third-Party Integrations
-While this starter kit is minimal by design, it already includes or can easily add:
 
-- **bcrypt**
-  - For secure password hashing (included as an npm dependency).
-- **NextAuth.js** (optional)
-  - A full-featured authentication library supporting email/password, OAuth, and more.
-- **Sentry or LogRocket** (optional)
-  - For real-time error tracking and performance monitoring in production.
+To speed up development and leverage specialized services, we integrate a few external tools:
 
-These integrations help extend the app’s capabilities without building every feature from scratch.
+- **Better Auth**
+  - A turnkey authentication library that handles sign-up, sign-in, password management, and session storage without building it from scratch.
+- **Redis (Cloud or Managed)**
+  - Used for rate-limiting API calls to protect against excessive or malicious requests.
+
+These integrations reduce the amount of custom code we write and bring proven security and reliability into the system.
 
 ## 5. Security and Performance Considerations
-We’ve baked in several measures to keep users safe and the app running smoothly:
 
-Security:
-- Passwords are never stored in plain text—bcrypt hashes them with a random salt.
-- API routes can implement CSRF protection and input validation to block malicious requests.
-- Session tokens or cookies are marked secure and HttpOnly to prevent theft via JavaScript.
+Keeping the platform safe and responsive is a top priority:
 
-Performance:
-- Server-side rendering (SSR) and static site generation (SSG) in Next.js deliver pages faster.
-- Code splitting and lazy-loaded components ensure users only download what they need.
-- Global CSS and theme files are small and cached by the browser for quick repeat visits.
+- **Authentication & Data Protection**
+  - All user credentials and sessions are managed by Better Auth, which encrypts sensitive data and stores it safely in PostgreSQL.
+- **Sandboxed CLI Execution**
+  - When users run commands, we launch them in isolated Docker containers with strict CPU, memory, and time limits to prevent abuse or system instability.
+- **Input Sanitization**
+  - All user inputs are validated and sanitized before being processed to avoid injection attacks.
+- **Rate Limiting**
+  - Redis-backed limits on API endpoints to prevent overuse and maintain fair access for all users.
+- **Performance Optimizations**
+  - Next.js server components and caching help pages load quickly.
+  - CI pipelines focus on changed packages only, keeping build times fast.
 
-These strategies work together to give users a fast, secure experience every time.
+These measures ensure a smooth, safe experience for every user.
 
 ## 6. Conclusion and Overall Tech Stack Summary
-In building **codeguide-starter**, we chose technologies that:
 
-- Align with modern web standards (Next.js, React, TypeScript).
-- Provide a clear, file-based project structure for rapid onboarding.
-- Offer built-in support for server-side rendering, API routes, and static assets.
-- Emphasize security through password hashing, session management, and safe defaults.
-- Enable easy scaling and future enhancements via modular code and optional integrations.
+We chose each technology in this stack to meet three main goals: ease of development, a great user experience, and strong security.
 
-This stack strikes a balance between simplicity for newcomers and flexibility for experienced teams. It accelerates development of a secure authentication flow and a polished dashboard, while leaving room to plug in databases, test suites, and advanced features as the project grows.
+- On the **frontend**, Next.js, React, Tailwind CSS, and shadcn/ui deliver a fast, attractive interface that can grow with our needs.
+- On the **backend**, Express.js, Prisma, PostgreSQL, and Redis provide a reliable foundation for data storage, business logic, and real-time features.
+- Our **infrastructure** (Docker, pnpm, GitHub Actions, Vercel) gives us consistent environments, automated quality checks, and smooth deployments.
+- **Third-party tools** like Better Auth and Redis integrate proven solutions for authentication and rate limiting.
+- We’ve built in **security and performance** from the start, with sandboxed execution, input validation, and optimized pipelines.
+
+This combination of technologies not only supports the current features—like user sign-in, a protected dashboard, and real-time CLI execution—but also positions us to scale up quickly. Unique aspects, such as the monorepo structure with shared packages (UI, CLI manager, terminal), set this project up for efficient code reuse and a unified developer experience across all services.

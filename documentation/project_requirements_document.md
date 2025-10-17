@@ -1,117 +1,94 @@
-# Project Requirements Document: codeguide-starter
-
----
+# Project Requirements Document (PRD)
 
 ## 1. Project Overview
 
-The **codeguide-starter** project is a boilerplate web application that provides a ready-made foundation for any web project requiring secure user authentication and a post-login dashboard. It sets up the common building blocks—sign-up and sign-in pages, API routes to handle registration and login, and a simple dashboard interface driven by static data. By delivering this skeleton, it accelerates development time and ensures best practices are in place from day one.
+VibeCode-Clone is a multi-service developer platform built on a monorepo structure. Its `apps/web` component provides a full-featured, authenticated web UI where developers can edit code, run CLI commands, and view real-time output. Behind the scenes, an `apps/server` service handles sandboxed command execution, AI integrations, and database operations. Shared packages like `ui`, `cli-manager`, and `terminal` ensure consistent tooling and design across the entire system.
 
-This starter kit is being built to solve the friction developers face when setting up repeated common tasks: credential handling, session management, page routing, and theming. Key objectives include: 1) delivering a fully working authentication flow (registration & login), 2) providing a gated dashboard area upon successful login, 3) establishing a clear, maintainable project structure using Next.js and TypeScript, and 4) demonstrating a clean theming approach with global and section-specific CSS. Success is measured by having an end-to-end login journey in under 200 lines of code and zero runtime type errors.
-
----
+We’re building this platform to give developers a one-stop environment for coding, experimenting with AI assistants (like GPT or Claude), and executing commands securely in Docker sandboxes. Key objectives for version one include: 1) a smooth sign-up/sign-in flow, 2) a responsive dashboard with editor and terminal components, 3) reliable back-end endpoints to spawn and manage isolated CLI processes, 4) real-time log streaming via WebSockets, and 5) a clear, maintainable monorepo setup with tests and CI/CD pipelines.
 
 ## 2. In-Scope vs. Out-of-Scope
 
-### In-Scope (Version 1)
-- User registration (sign-up) form with validation
-- User login (sign-in) form with validation
-- Next.js API routes under `/api/auth/route.ts` handling:
-  - Credential validation
-  - Password hashing (e.g., bcrypt)
-  - Session creation or JWT issuance
-- Protected dashboard pages under `/dashboard`:
-  - `layout.tsx` wrapping dashboard content
-  - `page.tsx` rendering static data from `data.json`
-- Global application layout in `/app/layout.tsx`
-- Basic styling via `globals.css` and `dashboard/theme.css`
-- TypeScript strict mode enabled
+**In-Scope** (v1 deliverables):
+- Monorepo setup using pnpm workspaces.
+- `apps/web`: Next.js + React + TypeScript frontend with Better Auth for user auth.
+- `apps/server`: Express.js + TypeScript backend with Prisma ORM + PostgreSQL + Redis rate-limiting.
+- Shared packages under `packages/`:
+  - `ui` (shadcn/ui + Tailwind CSS + next-themes)
+  - `cli-manager` (Docker sandboxing and CLI adapter logic)
+  - `terminal` (WebSocket-powered log streaming component)
+- API endpoints:
+  - POST `/cli/run` to start a sandboxed process.
+  - GET/WebSocket `/cli/logs/:id` for real-time output.
+  - POST `/cli/stop/:id` to terminate processes.
+- Docker Compose configuration for all services (Postgres, Redis, web, server).
+- Automated tests: Jest (unit/integration) and Playwright (E2E).
+- CI/CD via GitHub Actions and Vercel deployment for `apps/web`.
 
-### Out-of-Scope (Later Phases)
-- Integration with a real database (PostgreSQL, MongoDB, etc.)
-- Advanced authentication flows (password reset, email verification, MFA)
-- Role-based access control (RBAC)
-- Multi-tenant or white-label theming
-- Unit, integration, or end-to-end testing suites
-- CI/CD pipeline and production deployment scripts
-
----
+**Out-of-Scope** (planned for later phases):
+- Mobile clients or native apps.
+- Advanced analytics dashboards or team collaboration features.
+- Third-party plugin marketplace.
+- Complex sandbox orchestration beyond Docker containers (e.g., Kubernetes).
+- Support for every CLI tool—initial focus on AI adapters (OpenAI, Claude) and core shell commands.
 
 ## 3. User Flow
 
-A new visitor lands on the root URL and sees a welcome page with options to **Sign Up** or **Sign In**. If they choose Sign Up, they fill in their email, password, and hit “Create Account.” The form submits to `/api/auth/route.ts`, which hashes the password, creates a new user session or token, and redirects them to the dashboard. If any input is invalid, an inline error message explains the issue (e.g., “Password too short”).
+A new developer visits the VibeCode-Clone site and lands on the sign-in page. They choose “Sign up,” enter their email and password, and submit. Behind the scenes, the request goes to `apps/server`’s auth adapter (Prisma + PostgreSQL). On success, the frontend redirects the user to the main dashboard. The dashboard features a left sidebar (navigation), a top header (user profile, theme toggle), and a central panel displaying a code editor and integrated terminal.
 
-Once authenticated, the user is taken to the `/dashboard` route. Here they see a sidebar or header defined by `dashboard/layout.tsx`, and the main panel pulls in static data from `data.json`. They can log out (if that control is present), but otherwise their entire session is managed by server-side cookies or tokens. Returning users go directly to Sign In, submit credentials, and upon success they land back on `/dashboard`. Any unauthorized access to `/dashboard` redirects back to Sign In.
-
----
+Within the dashboard, the developer writes or pastes code in the editor. To run a command, they switch to the terminal tab, type something like `generate-docs myFile.md`, and hit Run. The frontend sends a POST to `/cli/run`, then opens a WebSocket connection to `/cli/logs/:id`. Logs stream back in real time and appear in the terminal UI. If they click “Stop,” the frontend POSTs to `/cli/stop/:id`, and the backend safely kills the Docker process. The user can toggle between dark and light modes at any time.
 
 ## 4. Core Features
 
-- **Sign-Up Page (`/app/sign-up/page.tsx`)**: Form fields for email & password, client-side validation, POST to `/api/auth`.
-- **Sign-In Page (`/app/sign-in/page.tsx`)**: Form fields for email & password, client-side validation, POST to `/api/auth`.
-- **Authentication API (`/app/api/auth/route.ts`)**: Handles both registration and login based on HTTP method, integrates password hashing (bcrypt) and session or JWT logic.
-- **Global Layout (`/app/layout.tsx` + `globals.css`)**: Shared header, footer, and CSS resets across all pages.
-- **Dashboard Layout (`/app/dashboard/layout.tsx` + `dashboard/theme.css`)**: Sidebar or top nav for authenticated flows, section-specific styling.
-- **Dashboard Page (`/app/dashboard/page.tsx`)**: Reads `data.json`, renders it as cards or tables.
-- **Static Data Source (`/app/dashboard/data.json`)**: Example dataset to demo dynamic rendering.
-- **TypeScript Configuration**: `tsconfig.json` with strict mode and path aliases (if any).
-
----
+- **Authentication**: Sign up, sign in, session management via Better Auth/Prisma.
+- **Dashboard Layout**: Sidebar, header, and main content area with editor and terminal.
+- **Code Editor**: Integrated editor component (e.g., Monaco) for writing code.
+- **Terminal & Log Streaming**: WebSocket client in `packages/terminal` for real-time stdout/stderr.
+- **CLI Manager**: `packages/cli-manager` spawns Docker sandboxes, auto-installs binaries, abstracts multiple CLI adapters.
+- **API Endpoints**: `/cli/run`, `/cli/logs/:id`, `/cli/stop/:id` in `apps/server`.
+- **Shared UI Library**: Central `packages/ui` based on shadcn/ui and Tailwind.
+- **Database Layer**: Prisma ORM with PostgreSQL, Redis for rate-limiting.
+- **Monorepo Orchestration**: pnpm workspaces, shared tsconfig, ESLint/Prettier.
+- **Containerization**: Docker Compose for multi-service orchestration.
+- **Testing & CI/CD**: Jest, Playwright, GitHub Actions, Vercel deploy.
 
 ## 5. Tech Stack & Tools
 
-- **Framework**: Next.js (App Router) for file-based routing, SSR/SSG, and API routes.
-- **Language**: TypeScript for type safety.
-- **UI Library**: React 18 for component-based UI.
-- **Styling**: Plain CSS via `globals.css` (global reset) and `theme.css` (sectional styling). Can easily migrate to CSS Modules or Tailwind in the future.
-- **Backend**: Node.js runtime provided by Next.js API routes.
-- **Password Hashing**: bcrypt (npm package).
-- **Session/JWT**: NextAuth.js or custom JWT logic (to be decided in implementation).
-- **IDE & Dev Tools**: VS Code with ESLint, Prettier extensions. Optionally, Cursor.ai for AI-assisted coding.
-
----
+- Frontend: Next.js (App Router), React, TypeScript, Tailwind CSS, shadcn/ui, next-themes.
+- Backend: Node.js, Express.js, TypeScript, Prisma ORM, PostgreSQL, Redis.
+- Monorepo: pnpm workspaces, root tsconfig with project references, shared ESLint/Prettier configs.
+- Containerization: Docker, Docker Compose.
+- Real-time: WebSockets (ws or built-in Next.js API routes).
+- CLI Sandboxing: Dockerode or Docker CLI via `packages/cli-manager`.
+- Testing: Jest (unit/integration), Playwright (E2E).
+- CI/CD: GitHub Actions (pnpm filtering), Vercel for frontend.
+- AI Integration (future): OpenAI GPT-4, Anthropic Claude SDKs.
+- IDE Plugins (optional): Cursor, Windsurf for faster AI-driven development.
 
 ## 6. Non-Functional Requirements
 
-- **Performance**: Initial page load under 200 ms on a standard broadband connection. API responses under 300 ms.
-- **Security**:
-  - HTTPS only in production.
-  - Proper CORS, CSRF protection for API routes.
-  - Secure password storage (bcrypt with salt).
-  - No credentials or secrets checked into version control.
-- **Scalability**: Structure must support adding database integration, caching layers, and advanced auth flows without rewiring core app.
-- **Usability**: Forms should give real-time feedback on invalid input. Layout must be responsive (mobile > 320 px).
-- **Maintainability**: Code must adhere to TypeScript strict mode. Linting & formatting enforced by ESLint/Prettier.
-
----
+- **Performance**: Backend API responses under 200ms; terminal streaming latency under 100ms.
+- **Scalability**: Support 100+ concurrent sandboxed processes; horizontal scaling via Docker Compose forks or future container orchestrator.
+- **Security**: HTTPS everywhere, JWT/session protection, strict Docker sandbox limits (CPU, memory, time), input sanitization.
+- **Reliability**: 99.9% uptime goal, automatic process cleanup on server restart.
+- **Usability**: WCAG-friendly UI, dark/light modes, responsive design.
+- **Compliance**: GDPR-compatible user data handling, encryption at rest for sensitive data.
 
 ## 7. Constraints & Assumptions
 
-- **No Database**: Dashboard uses only `data.json`; real database integration is deferred.
-- **Node Version**: Requires Node.js >= 14.
-- **Next.js Version**: Built on Next.js 13+ App Router.
-- **Authentication**: Assumes availability of bcrypt or NextAuth.js at implementation time.
-- **Hosting**: Targets serverless or Node.js-capable hosting (e.g., Vercel, Netlify).
-- **Browser Support**: Modern evergreen browsers; no IE11 support required.
-
----
+- Requires Docker and Docker Compose installed in dev/production.
+- Node.js >= 18, pnpm package manager.
+- Availability of external AI APIs (OpenAI/Claude) and valid API keys.
+- Users run modern browsers with WebSocket support.
+- Redis instance mandatory for rate-limiting.
+- Monorepo build times manageable with pnpm caching and selective builds.
 
 ## 8. Known Issues & Potential Pitfalls
 
-- **Static Data Limitation**: `data.json` is only for demo. A real API or database will be needed to avoid stale data.
-  *Mitigation*: Define a clear interface for data fetching so swapping to a live endpoint is trivial.
-
-- **Global CSS Conflicts**: Using global styles can lead to unintended overrides.
-  *Mitigation*: Plan to migrate to CSS Modules or utility-first CSS in Phase 2.
-
-- **API Route Ambiguity**: Single `/api/auth/route.ts` handling both sign-up and sign-in could get complex.
-  *Mitigation*: Clearly branch on HTTP method (`POST /register` vs. `POST /login`) or split into separate files.
-
-- **Lack of Testing**: No test suite means regressions can slip in.
-  *Mitigation*: Build a minimal Jest + React Testing Library setup in an early iteration.
-
-- **Error Handling Gaps**: Client and server must handle edge cases (network failures, malformed input).
-  *Mitigation*: Define a standard error response schema and show user-friendly messages.
+- **Docker-in-Docker Overhead**: Contain sandboxes safely but watch performance. Mitigate with resource limits and lightweight base images.
+- **WebSocket Stability**: Handle reconnections, dropped messages. Implement exponential backoff and client-side buffering.
+- **ORM Migration**: Drizzle → Prisma schema drift. Keep schema definitions in sync and maintain migration scripts.
+- **API Rate Limits**: External AI calls may hit quotas. Add caching, request batching, and graceful degradation.
+- **Monorepo Complexity**: Large repos slow CI. Use pnpm’s `--filter` and GitHub Actions caching to speed up builds.
 
 ---
-
-This PRD should serve as the single source of truth for the AI model or any developer generating the next set of technical documents: Tech Stack Doc, Frontend Guidelines, Backend Structure, App Flow, File Structure, and IDE Rules. It contains all functional and non-functional requirements with no ambiguity, enabling seamless downstream development.
+This PRD lays out the functional and non-functional scope of the VibeCode-Clone platform’s first release. Each section contains enough detail for an AI or development team to generate precise technical docs (Tech Stack, Frontend Guidelines, Backend Structure, etc.) without ambiguity.
